@@ -1,0 +1,25 @@
+<?xml version='1.0'?>
+<!DOCTYPE book [
+<!ENTITY ch01 SYSTEM "ch01-introduction.xml">
+<!ENTITY ch02 SYSTEM "ch02-installation.xml">
+<!ENTITY ch03 SYSTEM "ch03-usage.xml">
+<!ENTITY ch04 SYSTEM "ch04-design.xml">
+<!ENTITY ch05 SYSTEM "ch05-developing-plugins.xml">
+<!ENTITY app-a SYSTEM "app-a-blank-py.xml">
+<!ENTITY version SYSTEM "version.xml">
+]>
+<book xmlns="http://docbook.org/ns/docbook" version="5.0">
+  <info>
+    <title>SBTools Usage and Development Guide</title>
+    <subtitle>For Version &version;</subtitle>
+    <author><personname><firstname>David</firstname><surname>Alber</surname></personname></author>
+    <copyright><year>2009</year><holder>National Renewable Energy Laboratory</holder></copyright>
+  </info>
+
+&ch01;
+&ch02;
+&ch03;
+&ch04;
+&ch05;
+&app-a;
+</book>

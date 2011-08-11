@@ -1,0 +1,1083 @@
+<chapter xml:id="ch.developing-plugins"
+	 xmlns="http://docbook.org/ns/docbook"
+	 xmlns:xlink="http://www.w3.org/1999/xlink" version="5.0">
+  <title>Developing Plug-ins</title>
+
+  <para>This chapter discusses how plug-ins are written by first
+  introducing the <classname>SBTool</classname> class, listing its
+  methods, and the requirements for overloading those methods in a
+  plug-in. Next, the recommended approaches for raising errors within
+  a plug-in are examined and examples are given. We follow this with
+  the introduction of the <classname>SBToolOptionParser</classname>
+  class (a child of the Python Standard Library
+  <classname>OptionParser</classname> class), which is for parsing the
+  command line and providing plug-ins with an easy way to produce
+  consistent help information, version strings, and error
+  messages. The following section briefly introduces the packaging
+  file, <filename>setup.py</filename> and is followed by a plug-in
+  tutorial. The final section provides general tips for plug-in
+  development.</para>
+
+  <sect1 xml:id="ch.developing-plugins-sec.sbtool">
+    <title><classname>SBTool</classname> Class</title>
+
+    <para>All <package>SBTools</package> plug-ins are derived from the
+    <classname>SBTool</classname> class. Plug-ins are required to
+    overload certain methods in <classname>SBTool</classname> and have
+    the option of overloading other methods. <xref
+    linkend="fig.sbtool-class"/> diagrams the methods in
+    <classname>SBTool</classname> and shows the recommended minimal
+    set of methods to overload.</para>
+
+    <figure xml:id="fig.sbtool-class">
+      <title>SBTool Class and a Minimal Plug-in</title>
+      <mediaobject>
+	<imageobject>
+	  <imagedata align="center" scale="99" fileref="images/tool-inheritance.png"/>
+	</imageobject>
+      </mediaobject>
+    </figure>
+
+    <para>The following method must be overloaded by a plug-in
+    implementation:</para>
+    <variablelist>
+      <varlistentry>
+	<term><methodname>run(...)</methodname></term>
+	<listitem>
+	  <para>This method must be overloaded and is called by
+	  <package>SBTools</package> when the plug-in is run.</para>
+	</listitem>
+      </varlistentry>
+    </variablelist>
+
+    <para>The following methods should be overloaded by a plug-in
+    implementation.</para>
+    <variablelist>
+      <varlistentry>
+	<term><methodname>get_about(...)</methodname></term>
+	<listitem>
+	  <para>This method returns a string containing 'about'
+	  information for the plug-in.</para>
+
+	  <para>About information may include authors, institution,
+	  copyright, license information, website URL, and additional
+	  information.</para>
+
+	  <para>If this method is not overloaded, then an appropriate
+	  message regarding missing about information is printed by
+	  the <package>About</package> plug-in.</para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term><methodname>print_help(...)</methodname></term>
+	<listitem>
+	  <para>In a derived-class implementation, this method prints
+	  help information for the plug-in. See the plug-in example at
+	  the end of this chapter for the recommended way to implement
+	  this method.</para>
+
+	  <para>If this method is not overloaded, then an appropriate
+	  message regarding missing help information is printed by the
+	  <package>Help</package> plug-in.</para>
+	</listitem>
+      </varlistentry>
+    </variablelist>
+
+    <para>The following methods are probably best to not overload, but
+    may be overloaded if desired:</para>
+    <variablelist>
+      <varlistentry>
+	<term><methodname>get_command(...)</methodname></term>
+	<listitem>
+	  <para>This method returns a string containing the subcommand
+	  used to call the tool.</para>
+
+	  <para>Example: If a plug-in's
+	  <methodname>get_command</methodname> method returns
+	  <returnvalue>'mytool'</returnvalue>, then
+	  <package>SBTools</package> calls that plug-in when 'mytool'
+	  is used as the subcommand. The subcommand line printed by
+	  <command>sbtools help</command> for that plug-in (assuming
+	  the <methodname>get_alt_commands</methodname> method returns
+	  an empty list) is:</para>
+	  <screen>   mytool</screen>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term><methodname>get_alt_commands(...)</methodname></term>
+	<listitem>
+	  <para>This method returns a list of the alternate
+	  subcommands for the plug-in or an empty list if the plug-in
+	  has no alternate subcommands.</para>
+
+	  <para>Example: If a plug-in's
+	  <methodname>get_command</methodname> method returns
+	  <returnvalue>'mytool'</returnvalue> and its
+	  <methodname>get_alt_commands</methodname> method returns
+	  <returnvalue>['my', 'myt']</returnvalue>,
+	  <package>SBTools</package> calls this plug-in when 'mytool',
+	  'my', or 'myt' is used as the subcommand, and the subcommand
+	  line printed by <command>sbtools help</command> for this
+	  plug-in is:</para>
+	  <screen>   mytool (my, myt)</screen>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term><methodname>get_full_command_str(...)</methodname></term>
+	<listitem>
+	  <para>Returns the complete command string of the tool, which
+	  is the same as what appears for the tool in the available
+	  subcommands list when <command>sbtools help</command> is
+	  run.</para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term><methodname>get_name(...)</methodname></term>
+	<listitem>
+	  <para>Return the name of this package, as defined in the
+	  <filename>setup.py</filename> file.</para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term><methodname>get_full_epldata(...)</methodname></term>
+	<listitem>
+	  <para>Returns the string on the left-hand side of the equals
+	  sign for this plug-in's entry point, as defined in the
+	  <filename>setup.py</filename> file. See below for details
+	  about entry points.</para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term><methodname>get_version(...)</methodname></term>
+	<listitem>
+	  <para>Return the version string of this package, as defined
+	  in the <filename>setup.py</filename> file.</para>
+	</listitem>
+      </varlistentry>
+    </variablelist>
+  </sect1>
+
+  <sect1 xml:id="ch.developing-plugins-sec.errors">
+    <title>Raising Errors</title>
+
+    <para>To make it easier to provide a consistent interface,
+    <package>SBTools</package> provides standard ways to raise
+    errors. Plug-ins produce the error message, but the formatting and
+    printing of the message is left to <package>SBTools</package>. The
+    currently available errors are a generic error and an error for
+    situations where a bad subcommand is provided.</para>
+
+    <sect2 xml:id="ch.developing-plugins-sec.generic-errors">
+      <title>Generic Errors</title>
+
+      <para>To raise a generic error, use the
+      <classname>SBToolError</classname> exception class. Raising this
+      exception with a given string causes <package>SBTools</package>
+      to print the message (it wraps the lines for you) and exit. For
+      example, if the code does</para>
+      <screen>from sbtools.sbtool import SBToolError
+raise SBToolError("This is a long error message, considering it has \
+no useful information. We did this to demonstrate that the line is \
+wrapped by SBTools for you.")</screen>
+      <para>then the following is printed before
+      <package>SBTools</package> exits:</para>
+      <screen>This is a long error message, considering it has no useful information. We did
+this to demonstrate that the line is wrapped by SBTools for you.</screen>
+
+      <tip>
+	<para>If a plug-in is using the
+	<classname>SBToolOptionParser</classname> class to handle
+	command-line parsing (see below), then use the
+	<methodname>error_exit()</methodname> method to raise generic
+	errors, rather than raising the
+	<classname>SBToolError</classname> exception manually. This
+	helps to ensure more error message consistency across
+	plug-ins.</para>
+      </tip>
+    </sect2>
+
+    <sect2 xml:id="ch.developing-plugins-sec.subcommand-errors">
+      <title>Subcommand Errors</title>
+
+      <para>The <package>SBTools</package> framework detects when it
+      has been given a bad subcommand as input. For example, running
+      <command>sbtools notreal</command> yields the following as
+      output:</para>
+      <screen>Unknown command: 'notreal'.
+Type 'sbtools help' for usage information.</screen>
+
+      <para>In addition to the framework, some plug-ins, such as the
+      Help (see <xref linkend="ch.usage"/>) plug-in, take subcommands
+      for other plug-ins as input. In order to ensure consistent error
+      messages in this situation, we have implemented the
+      <classname>UnknownSubcommandError</classname> exception
+      class. Raising this exception and passing it a string containing
+      the unknown subcommand causes <package>SBTools</package> to
+      print the correctly formatted error and then exit. For example,
+      if the code</para>
+      <screen>from sbtools.sbtools import UnknownSubcommandError
+raise UnknownSubcommandError("reallynotreal")</screen>
+	
+      <para>is executed in a plug-in, then the following is printed
+      before <package>SBTools</package> exits:</para>
+      <screen>Unknown command: 'reallynotreal'.
+Type 'sbtools help' for usage information.</screen>
+    </sect2>
+  </sect1>
+
+  <sect1 xml:id="ch.developing-plugins-sec.sboptparse">
+    <title><classname>SBToolOptionParser</classname> Class</title>
+
+    <para>It is up to the developer to decide how to parse the command
+    line, but for convenience and to provide consistency between
+    tools, we have implemented the
+    <classname>SBToolOptionParser</classname> class. As with
+    <classname>SBToolsOptionParser</classname>,
+    <classname>SBToolOptionParser</classname> is derived from the
+    <link
+	xlink:href="http://docs.python.org/library/optparse.html"><classname>OptionParser</classname>
+    class</link>.</para>
+
+    <para>The basic usage of <classname>SBToolOptionParser</classname>
+    is similar to <classname>OptionParser</classname>. One difference
+    is that the initialization method for
+    <classname>SBToolOptionParser</classname> has required parameters
+    that are not accepted by
+    <classname>OptionParser</classname>. Additionally,
+    <classname>SBToolOptionParser</classname> provides the plug-in
+    developer with extra properties and methods for convenience, as
+    listed below. For an example of using the
+    <classname>SBToolOptionParser</classname> class, see <xref
+    linkend="ch.developing-plugins-sec.plgtut"/>.</para>
+    <itemizedlist>
+      <listitem>
+	<para>The developer does not need to provide
+	<classname>SBToolOptionParser</classname> with the plug-in
+	version string; this is automatically gathered from the
+	<classname>SBTool</classname> method
+	<methodname>get_version()</methodname> (which, by default,
+	extracts the version string from the
+	<filename>setup.py</filename> file).</para>
+      </listitem>
+
+      <listitem>
+	<para><classname>SBToolOptionParser</classname> implements
+	<methodname>get_usage_command()</methodname>, which produces
+	the standard message on how to get usage help. For example,
+	for a tool whose primary subcommand is '<code>mytool</code>',
+	the <methodname>get_usage_command</methodname> method
+	returns</para>
+	<screen>Type 'sbtools help mytool' for usage.</screen>
+
+	<para>This method is not typically called by the
+	developer. Instead, it is called by other methods that produce
+	error messages.</para>
+      </listitem>
+
+      <listitem>
+	<para>For historical reasons,
+	<classname>SBToolOptionParser</classname> also implements
+	<methodname>print_usage_command()</methodname>, which simply
+	calls and prints the result from
+	<methodname>get_usage_command()</methodname>.</para>
+      </listitem>
+
+      <listitem>
+	<para><classname>SBToolOptionParser</classname> overloads the
+	<methodname>error</methodname> method of the
+	<classname>OptionParser</classname> class to provide the
+	desired consistent output. This method is called when
+	something goes wrong while parsing the command line, such as
+	when an unknown option is found. Plug-ins are not meant to
+	directly call the <methodname>error</methodname>
+	method.</para>
+      </listitem>
+
+      <listitem>
+	<para>The method <methodname>error_exit(msg)</methodname>
+	produces an error message using the provided message followed
+	by a line containing the command for getting usage information
+	on this tool. The resulting message is passed to an
+	<classname>SBToolError</classname> exception as it is
+	raised. This is the standard way of alerting the user and
+	exiting when a tool is not used correctly.</para>
+
+	<para>For example, when a tool whose primary subcommand is
+	'<code>mytool</code>' calls</para>
+	<programlisting>error_exit("The tool has failed. I don't know why.")</programlisting>
+
+	<para><package>SBTools</package> prints</para>
+	<screen>The tool has failed. I don't know why.
+Type 'sbtools help mytool' for usage.</screen>
+      </listitem>
+    </itemizedlist>
+  </sect1>
+
+  <sect1 xml:id="ch.developing-plugins-sec.setup-py">
+    <title>The <filename>setup.py</filename> File</title>
+
+    <para><package>SBTools</package> uses <link xlink:title="setuptools"
+    xlink:href="http://peak.telecommunity.com/DevCenter/setuptools"><package>setuptools</package></link>
+    for packaging. As with <link xlink:title="distutils"
+    xlink:href="http://docs.python.org/distutils/"><package>distutils</package></link>,
+    setuptools uses the <filename>setup.py</filename> file to define
+    everything needed for packaging and installation.</para>
+
+    <para>Some of the key information in the
+    <filename>setup.py</filename> file is the package name, version,
+    descriptions, author name and email, project website, license
+    type, and package dependencies. For a <package>SBTools</package> plug-in it is also
+    critical to properly define the entry point so that <package>SBTools</package>
+    detects the plug-in.</para>
+
+    <para>Core plug-ins do not have their own
+    <filename>setup.py</filename> file, so let's look at the
+    <filename>setup.py</filename> for version 0.1.1 of the
+    <package>Check</package> plug-in.</para>
+    <figure xml:id="fig.setup-py">
+      <title>Basic <filename>setup.py</filename> file</title>
+      <programlisting linenumbering="numbered">from ez_setup import use_setuptools
+use_setuptools()
+from setuptools import setup, find_packages
+
+setup(name="Check",
+      version="0.1.2",
+      description="Tool to use libsbml's consistency checker.",
+      long_description="""\
+The Check tool is a plug-in for the SBTools package that checks the
+syntax of SBML models using libsbml.
+""",
+      author="David Alber",
+      author_email="david_alber@nrel.gov",
+      license="GPL",
+      packages=find_packages(exclude=['tests']),
+      install_requires=['SBTools>=0.5', 'libsbml>=3.0.0'],
+      entry_points = {
+        'SBTools.plugins': ['Check check = check.check:Check'],
+      },
+      test_suite = "tests.tests.CheckTestSuite"
+)</programlisting>
+    </figure>
+
+    <para>Most of <xref linkend="fig.setup-py"/> should be
+    self-explanatory, but we now cover a few entries that may be less
+    than clear.</para>
+
+    <variablelist>
+      <varlistentry>
+	<term><code>packages=find_packages(exclude=['tests'])</code></term>
+	<listitem>
+	  <para></para>
+	  <para>The packages keyword declares which packages to
+	  process. In the example, we use the
+	  <package>setuptools</package>
+	  <methodname>find_packages()</methodname> method to
+	  automatically find packages, excluding the directory named
+	  <filename>tests</filename>.</para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term><code>install_requires=['SBTools>=0.5', 'libsbml>=3.0.0']</code></term>
+	<listitem>
+	  <para></para>
+	  <para>Lists the dependencies of the <package>Check</package>
+	  plug-in. <package>Check</package> depends on the
+	  <package>SBTools</package> framework version 0.5 or better
+	  and <package>libsbml</package> version 3.0.0 or
+	  better. These dependencies are automatically checked when
+	  the plug-in is installed.</para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term><code>entry_points</code></term>
+	<listitem>
+	  <para>Lists the entry points for the
+	  <package>Check</package> plug-in. <package>SBTools</package>
+	  considers any entry points named
+	  <code>SBTools.plugins</code> to be for a plug-in.</para>
+
+	  <para>The left side of the equals sign defines two sets of
+	  information: the plug-in name (which may differ from the
+	  package name) and a set of subcommands used to call the
+	  plug-in in <package>SBTools</package>. The syntax is</para>
+	  <programlisting>NAME SUBCOMMAND [ALTERNATE_SUBCOMMANDS]</programlisting>
+
+	  <para>where <code>NAME</code> is the plug-in name,
+	  <code>SUBCOMMAND</code> is the primary subcommand of the
+	  plug-in, and <code>ALTERNATE_SUBCOMMANDS</code> is an
+	  optional list of alternate subcommands for the
+	  plug-in.</para>
+
+	  <para>The right side of the equals sign tells
+	  <package>SBTools</package> where to find the plug-in. In
+	  this case, the <package>Check</package> plug-in is
+	  implemented by the <classname>Check</classname> class inside
+	  the check module of the <package>check</package>
+	  package. See the next section for more details.</para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term><code>test_suite</code></term>
+	<listitem>
+	  <para>Defines the location of the test suite. When
+	  <command>python setup.py test</command> is run, Python runs
+	  the test suite in the <classname>CheckTestSuite</classname>
+	  class in the tests module of the <package>tests</package>
+	  package. See the next section for more details.</para>
+	</listitem>
+      </varlistentry>
+    </variablelist>
+  </sect1>
+
+  <sect1 xml:id="ch.developing-plugins-sec.plgtut">
+    <title>Plug-in Tutorial</title>
+
+    <para>In this section, we develop a simple plug-in, the
+    "<package>Blank</package>" plug-in, that demonstrates key concepts
+    about developing plug-ins for use with the
+    <package>SBTools</package> framework. The files in this tutorial
+    are available at <link
+    xlink:href="http://www.nrel.gov/Blank.tar.gz"/>. After downloading
+    the archive, decompress and extract the files:</para>
+    <screen>$ tar zxf Blank.tar.gz</screen>
+
+    <para>This creates the directory <filename>Blank/</filename>,
+    which has the structure shown in <xref
+    linkend="fig.blank-dir-tree"/>.</para>
+    <figure xml:id="fig.blank-dir-tree">
+      <title>Blank plug-in directory structure</title>
+      <screen>Blank/
+|-- blank
+|   |-- __init__.py
+|   `-- blank.py
+|-- ez_setup.py
+|-- setup.py
+`-- tests
+    |-- __init__.py
+    `-- tests.py</screen>
+    </figure>
+
+  <sect2 xml:id="ch.developing-plugins-sec.ex_setup">
+    <title><filename>ez_setup.py</filename></title>
+
+    <para>The <filename>ez_setup.py</filename> file is part of the
+    <package>setuptools</package> package. Simply place the most
+    recent copy of this file (available at <link
+    xlink:href="http://peak.telecommunity.com/dist/ez_setup.py"/>) in
+    your package directory.</para>
+
+    <para>Details about <package>setuptools</package> are available at
+    <link
+    xlink:href="http://peak.telecommunity.com/DevCenter/setuptools"/>.</para>
+  </sect2>
+
+  <sect2 xml:id="ch.developing-plugins-sec.setup-py2">
+    <title><filename>setup.py</filename></title>
+
+    <para>Introduced earlier in this chapter, the
+    <filename>setup.py</filename> file contains information for the
+    packaging and installation of the package. The
+    <package>Blank</package> plug-in's <filename>setup.py</filename>
+    file is shown in <xref linkend="fig.blank-setup-py"/>.</para>
+    <figure xml:id="fig.blank-setup-py">
+      <title>Blank plug-in <filename>setup.py</filename></title>
+      <programlisting linenumbering="numbered">from ez_setup import use_setuptools
+use_setuptools()
+from setuptools import setup, find_packages
+
+setup(name="Blank",
+      version="0.1.1",
+      description="SBTools plug-in template.",
+      long_description="""\
+This tool is simply an example template of how to build a plug-in for
+the SBTools package.
+""",
+      author="David Alber",
+      author_email="david_alber@nrel.gov",
+      license="GPL",
+      packages=find_packages(exclude=['tests']),
+      install_requires=['SBTools>=0.5'],
+      entry_points = {
+        'SBTools.plugins': ['Blank blank bl = blank.blank:Blank'],
+      },
+      test_suite = "tests.tests.BlankTestSuite"
+)</programlisting>
+    </figure>
+
+    <para>We can now explain the <code>entry_points</code> and
+    <code>test_suite</code> directives more thoroughly.</para>
+
+    <para>Similar to the previous example,
+    <code>SBTools.plugins</code> directive states that the plug-in
+    named <package>Blank</package> with subcommands
+    <command>blank</command> and <command>bl</command> is implemented
+    in the <classname>Blank</classname> class in the blank module of
+    the <package>blank</package> package. That is, the
+    <classname>Blank</classname> class is located in the
+    <filename>blank.py</filename> file in the
+    <filename>Blank/blank/</filename> directory (see <xref
+    linkend="fig.blank-dir-tree"/>).</para>
+
+    <para>The <code>test_suite</code> directive states that the Blank
+    plug-in's test cases are run through the
+    <classname>BlankTestSuite</classname> class in the
+    <filename>tests.py</filename> file in the
+    <filename>Blank/test/</filename> directory (see <xref
+    linkend="fig.blank-dir-tree"/>).</para>
+  </sect2>
+
+  <sect2 xml:id="ch.developing-plugins-sec.blank-dir">
+    <title><filename>blank/</filename> directory</title>
+
+    <para>The <filename>blank/</filename> directory is where the
+    source code for the plug-in is located. In the case of the Blank
+    plug-in, there is only one source file:
+    <filename>blank.py</filename>. The other file in the directory,
+    <filename>__init__.py</filename>, is empty, but is there to tell
+    Python that the directory is a package. Let's discuss what we want
+    the <package>Blank</package> plug-in to do and then look at the
+    contents of <filename>blank.py</filename> in digestible blocks
+    (with comments removed) to see how the plug-in is implemented. The
+    unabridged <filename>blank.py</filename> file is listed in <xref
+    linkend="app.blank-py"/>.</para>
+
+    <sect3 xml:id="ch.developing-plugins-sec.tut-behavior">
+      <title>Desired behavior</title>
+      <para>We want the <package>Blank</package> plug-in to do one of
+      six things depending on the input provided:</para>
+      <itemizedlist>
+	<listitem>
+	  <para>Given no input (try <command>sbtools blank</command>),
+	  it should print</para>
+	  <screen>Hello, world.</screen>
+	</listitem>
+
+	<listitem>
+	  <para>Given the <command>-e</command> or
+	  <command>--error</command> option (try <command>sbtools
+	  blank -e</command> or <command>sbtools blank
+	  --error</command>), it should print</para>
+	  <screen>This is the preferred way to print a usage error and exit. The error_exit()
+method takes care of wrapping the message for you.
+Type 'sbtools help blank' for usage.</screen>
+	  <para>using the <methodname>error_exit</methodname> method
+	  discussed above in <xref
+	  linkend="ch.developing-plugins-sec.sboptparse"/>.</para>
+	</listitem>
+
+	<listitem>
+	  <para>Given the <command>-h</command> or
+	  <command>--help</command> option (try <command>sbtools
+	  blank -h</command> or <command>sbtools blank
+	  --help</command>), it should print help information for the
+	  plug-in (the same help information as <command>sbtools help
+	  blank</command>). This functionality is automatically
+	  provided by the <classname>SBToolOptionParser</classname>
+	  object used to handle command-line processing.</para>
+	</listitem>
+
+	<listitem>
+	  <para>Given the <command>--version</command> option (try
+	  <command>sbtools blank --version</command>), it should print
+	  the plug-in's version string. This functionality is
+	  automatically provided by the
+	  <classname>SBToolOptionParser</classname> object used to
+	  handle command-line processing.</para>
+	</listitem>
+
+	<listitem>
+	  <para>Given a subcommand, it should print that the subcommand
+	  exists, if that is the case. For example, <command>sbtools
+	  blank blank</command> should print</para>
+	  <screen>The subcommand 'blank' exists.</screen>
+	</listitem>
+
+	<listitem>
+	  <para>If a given subcommand does not exist, an error should
+	  be raised using the
+	  <classname>UnknownSubcommandError</classname> discussed
+	  above in <xref
+	  linkend="ch.developing-plugins-sec.subcommand-errors"/>. Additionally,
+	  an example of using the <methodname>fill</methodname> method
+	  in <package>textwrap</package> should be produced. For
+	  example, <command>sbtools blank bland</command> should
+	  print</para>
+	  <screen>Handle unknown subcommand errors by raising an UnknownSubcommandError
+exception, as is done below. Also, this statement shows you how to explicitly
+wrap text in sbtools.
+
+Unknown command: 'bland'.
+Type 'sbtools help' for usage information.</screen>
+	</listitem>
+      </itemizedlist>
+
+      <para>In addition to the above behavior, we also wish to provide
+      about information and help information for the
+      <package>About</package> and <package>Help</package> plug-ins,
+      respectively. This is provided by overloading the
+      <methodname>get_about</methodname> and
+      <methodname>print_help</methodname> methods. Try
+      <command>sbtools about blank</command> and <command>sbtools help
+      blank</command>.</para>
+
+    </sect3>
+
+    <sect3>
+      <title>Implementation</title>
+
+      <para>Now we step through the code in
+      <filename>blank.py</filename>.</para>
+
+      <sect4>
+	<title><code>import</code> statements</title>
+	<para>The <filename>blank.py</filename> file begins with a set
+	of <code>import</code> statements.</para>
+	<programlisting>from sbtools.sbtools import UnknownSubcommandError
+from sbtools.sbtool import SBTool
+from sbtools.sboptparse import SBToolOptionParser
+import textwrap</programlisting>
+
+        <para>The first three <code>import</code>s bring in classes
+        from <package>SBTools</package> that will be used by
+        <package>Blank</package>. The final <code>import</code> brings
+        in the <package>textwrap</package> package, which provides a
+        function for conveniently wrapping text to a certain width
+        (see <link
+        xlink:href="http://docs.python.org/library/textwrap.html"/>
+        for details on <package>textwrap</package>).</para>
+      </sect4>
+
+      <sect4>
+	<title><classname>Blank</classname> class declaration and
+	<methodname>__init__</methodname> method</title>
+
+	<para>The <package>Blank</package> plug-in is implemented (not
+	surprising) by the <classname>Blank</classname> class.</para>
+	<programlisting>class Blank(SBTool):
+
+    def __init__(self, sbtools):
+        self.sbtools = sbtools
+        self.parser = self.init_parser()</programlisting>
+
+	<para>In the first line, the class is declared as a child
+	class of <classname>SBTool</classname>. As discussed at the
+	beginning of the chapter in <xref
+	linkend="ch.developing-plugins-sec.sbtool"/>, all plug-ins for
+	the <package>SBTools</package> framework must be subclasses of
+	<classname>SBTool</classname>.</para>
+
+	<para>Following the class declaration, we see the
+	<methodname>__init__</methodname> method. All
+	<package>SBTools</package> plug-ins must accept the
+	<parameter>sbtools</parameter> parameter. This parameter
+	allows a plug-in to use the querying methods in
+	<classname>SBTools</classname>. Additionally, the
+	<classname>SBToolOptionParser</classname> class expects to
+	receive the <parameter>sbtools</parameter> parameter when its
+	initializer is called.</para>
+
+	<para>In the final line, we create an
+	<classname>SBToolOptionParser</classname> object by calling
+	another <classname>Blank</classname> method called
+	<methodname>init_parser</methodname>.</para>
+      </sect4>
+
+      <sect4>
+	<title><methodname>init_parser</methodname> method</title>
+
+	<para>The <methodname>init_parser</methodname> method is
+	responsible for creating and returning an
+	<classname>SBToolOptionParser</classname> object for the
+	<package>Blank</package> plug-in.</para>
+
+	<note>
+	  <para>Plug-in developers are welcome to use any approach
+	  they want for processing the command line and producing
+	  error messages, but we recommend using the
+	  <classname>SBToolOptionParser</classname> class due to its
+	  convenience and its ability to help maintain a consistent
+	  look across plug-ins.</para>
+	</note>
+
+	<programlisting>    def init_parser(self):
+        usage = "%s [options] [subcommand]" % (self.get_command())
+        description = "An SBTools plug-in template plug-in."
+
+        parser = SBToolOptionParser(self, self.sbtools, usage,
+                                    description=description)
+
+        parser.add_option("-e", "--error", action="store_true", dest="error",
+                          default=False, help="print an error message")
+        return parser</programlisting>
+
+	<para>The first two lines following the method declaration
+	define data specific to the plug-in. It is recommended that
+	all plug-ins define usage and description information.</para>
+
+	<para>The next line creates an
+	<classname>SBToolOptionParser</classname> object using the
+	information from the previous lines of code. The
+	<code>parser</code> object that is returned is capable of
+	parsing the command line and also generates help information
+	when passed the <command>-h</command> or
+	<command>--help</command> options.</para>
+
+	<para>For this plug-in, however, we need to define additional
+	options; namely <command>-e</command> and
+	<command>--error</command>, as discussed in <xref
+	linkend="ch.developing-plugins-sec.tut-behavior"/>. This is
+	what the line calling the
+	<classname>SBToolOptionParser</classname> method
+	<methodname>add_option</methodname> does. Briefly, when the
+	<package>Blank</package> plug-in is called with either the
+	<command>-e</command> or <command>--error</command> option, a
+	value called "<code>error</code>" is set to <code>True</code>
+	(and is <code>False</code> otherwise). See <xref
+	linkend="ch.developing-plugins-sec.run"/> below for where this
+	value is used.</para>
+
+	<para>Finally, <methodname>init_parser</methodname> returns
+	the newly-created <classname>SBToolOptionParser</classname>
+	object.</para>
+
+	<note>
+	  <para>For a complete description of how to use the
+	  <classname>OptionParser</classname> class (from which
+	  <classname>SBToolOptionParser</classname> is derived) see
+	  <link
+	      xlink:href="http://docs.python.org/library/optparse.html"/>.</para>
+	</note>
+      </sect4>
+
+      <sect4>
+	<title><methodname>get_about</methodname> method</title>
+
+	<para>It is recommended that the
+	<methodname>get_about</methodname> method be overloaded to
+	provide some information about a plug-in (see <xref
+	linkend="ch.developing-plugins-sec.sbtool"/>). In the case of
+	the <package>Blank</package> plug-in, we simply provide some
+	basic information, making the first line long enough to
+	demonstrate that the <package>About</package> plug-in wraps
+	the lines in the about string to the correct length, saving
+	you the trouble.</para>
+	<programlisting>    def get_about(self):
+        return """The Blank tool is designed to provide a template for \
+plug-in development by demonstrating a tool with minimal functionality.
+
+The Blank tool is maintained at the National Renewable Energy Laboratory.
+
+The About tool takes care of wrapping this text for you."""</programlisting>
+
+        <para>If you have installed the <package>Blank</package>
+	plug-in, you may run <command>sbtools about blank</command> to
+	see the output generated.</para>
+      </sect4>
+
+      <sect4>
+	<title><methodname>print_help</methodname> method</title>
+
+	<para>As the method name implies,
+	<methodname>print_help</methodname> prints a plug-in's help
+	information to standard output when called. It is highly
+	recommended that plug-ins overload
+	<methodname>print_help</methodname>, since without doing so,
+	<command>sbtools help &lt;subcommand&gt;</command> will not
+	provide users with useful information.</para>
+
+	<para>The <classname>SBToolOptionParser</classname> class does
+	all of the hard work for this. Therefore, if a plug-in is
+	using the <classname>SBToolOptionParser</classname> class to
+	process the command line (as the <package>Blank</package>
+	plug-in does), <methodname>print_help</methodname> is trivial
+	to write, as shown below.</para>
+	<programlisting>    def print_help(self):
+        self.parser.print_help()</programlisting>
+      </sect4>
+
+      <sect4 xml:id="ch.developing-plugins-sec.run">
+	<title><methodname>run</methodname> method</title>
+
+	<para>Recall from <xref
+	linkend="ch.developing-plugins-sec.sbtool"/> that the
+	<methodname>run</methodname> method must be overloaded by
+	plug-ins. This method what <package>SBTools</package> calls
+	when the method is to be run.</para>
+
+	<note>
+	  <para>Due to its size, we present the
+	  <methodname>run</methodname> method in several pieces to make
+	  it more understandable. For the all-at-once view, see <xref
+	  linkend="app.blank-py"/>.</para>
+	</note>
+
+	<para>The <methodname>run</methodname> method declaration is
+	simple and does not take any parameters, besides
+	<parameter>self</parameter>.</para>
+	<programlisting>    def run(self):</programlisting>
+
+	<para>At the beginning of the method, we parse the command
+	line by calling the <methodname>parse_args</methodname> method
+	of our <classname>SBToolOptionParser</classname>
+	object. This creates two new members <code>options</code> and
+	<code>args</code>.</para>
+	<programlisting>        (self.options, self.args) = self.parser.parse_args()</programlisting>
+
+	<para>Now we implement the behavior described in <xref
+	linkend="ch.developing-plugins-sec.tut-behavior"/> in
+	<code>if-elif-else</code> blocks of code.</para>
+
+	<para>In the <code>if</code> block, we test if a
+	<command>-e</command> or <command>--error</command> option was
+	passed by examining if the <code>error</code> value in the
+	<code>options</code> member is <code>True</code>.</para>
+
+	<para>If the <code>error</code> value is <code>True</code>,
+	then an error is printed using the generic error method
+	<methodname>error_exit</methodname>, available through the
+	<classname>SBToolOptionParser</classname> object.</para>
+
+	<programlisting>        if self.options.error:
+            self.parser.error_exit("This is the preferred way to print a \
+usage error and exit. The error_exit() method takes care of wrapping the \
+message for you.")</programlisting>
+
+        <para>If the error option was not provided, we next check to
+        see if the user passed a subcommand. Any subcommands will be
+        stored in the <code>args</code> member that was created when
+        the <methodname>parse_args</methodname> member of the
+        <classname>SBToolOptionParser</classname> object was
+        called. If the length of the <code>args</code> member is
+        greater than one, then a subcommand was passed.</para>
+
+	<note>
+	  <para>The first element in the <code>args</code> list (i.e.,
+	  <code>args[0]</code>) is the subcommand of the plug-in
+	  called. That is, for the <package>Blank</package> plug-in,
+	  <code>args[0]</code> will be '<code>blank</code>' or
+	  '<code>bl</code>', depending on which subcommand was
+	  used.</para>
+	</note>
+
+	<para>We use the <classname>SBTools</classname> querying
+	method <methodname>has_tool_by_subcommand</methodname> to
+	determine if the subcommand that was passed is a valid
+	subcommand. If the subcommand is valid, a message to that
+	effect is printed. In the case that the subcommand is not
+	valid, two things happen:</para>
+	<orderedlist>
+	  <listitem>
+	    <para>An explanation of how the error is handled is
+	    printed. This explanation also shows how to wrap output
+	    using the <methodname>fill</methodname> method in
+	    <package>textwrap</package>.</para>
+	  </listitem>
+	  <listitem>
+	    <para>The unknown subcommand error is reported by raising
+	    an <classname>UnknownSubcommandError</classname> and
+	    passing it the name of the unknown subcommand (i.e.,
+	    <code>args[1]</code>). This is the preferred method for
+	    handling this type of error.</para>
+	  </listitem>
+	</orderedlist>
+
+        <programlisting>        elif len(self.args) > 1:
+            if self.sbtools.has_tool_by_subcommand(self.args[1]):
+                print "The subcommand '%s' exists." % (self.args[1])
+            else:
+                print textwrap.fill("Handle unknown subcommand errors by \
+raising an UnknownSubcommandError exception, as is done below. Also, \
+this statement shows you how to explicitly wrap text in sbtools.", 78)
+                print
+                raise UnknownSubcommandError(self.args[1])</programlisting>
+
+
+	<para>Finally, if neither of the two previous conditions were
+	satisfied, the plug-in prints a simple message.</para>
+
+	<programlisting>        else:
+            print "Hello, world."</programlisting>
+      </sect4>
+    </sect3>
+
+  </sect2>
+
+  <sect2 xml:id="ch.developing-plugins-sec.tests-dir">
+    <title><filename>tests/</filename> directory</title>
+
+    <para>As in the <filename>blank/</filename> directory, the
+    <filename>__init__.py</filename> file is empty and tells Python
+    through its presence that the directory is a package.</para>
+
+    <para>The <filename>tests.py</filename> file contains unit tests
+    written for <package>Blank</package>, which are written using
+    the Python <package>unittest</package> package. For details on the
+    <package>unittest</package> package, see <link
+    xlink:href="http://docs.python.org/library/unittest.html"/>.</para>
+
+    <para>To run the <package>Blank</package> unit tests, do
+    <command>python setup.py test</command> in the
+    <filename>Blank/</filename> directory.</para>
+  </sect2>
+  </sect1>
+
+  <sect1 xml:id="ch.developing-plugins-sec.tips">
+    <title>Plug-in Development Tips</title>
+
+    <para>The purpose of this section is to provide a list with some
+    techniques we find useful when developing plug-ins (or doing
+    development on <package>SBTools</package> itself).</para>
+
+    <itemizedlist>
+      <listitem>
+	<para>Set up a virtual Python environment so that development
+	is not done in the global Python installation. This is useful
+	to be certain that the dependencies of the plug-in are
+	understood and to avoid cluttering the global
+	installation. See the <package><link
+	xlink:href="http://pypi.python.org/pypi/virtualenv">virtualenv</link></package>
+	package for how to set up a virtual environment.</para>
+      </listitem>
+
+      <listitem>
+	<para>Install your development package in development mode. If
+	the package is installed using <command>python setup.py
+	install</command> then any changes made to the package will
+	not be reflected until running <command>python setup.py
+	install</command> again. This is not too desirable if many
+	changes are going to be made.</para>
+
+	<para>Fortunately, there is another option. Install the
+	package using <command>python setup.py develop</command>. In
+	this mode, changes you make to the source code will be
+	available immediately without needing to reinstall (with some
+	exceptions, such as changes to the
+	<filename>setup.py</filename> file).</para>
+
+	<para>If you do install the package in develop mode, note that
+	the <package>File</package> plug-in will return the path to
+	where the source code is, not to the file that <command>python
+	setup.py develop</command> installs in the Python
+	<filename>site-packages/</filename> directory.</para>
+
+	<para>See the <link
+	xlink:href="http://peak.telecommunity.com/DevCenter/setuptools">setuptools
+	documentation</link> for the details on everything you can do
+	with the <filename>setup.py</filename> file.</para>
+      </listitem>
+
+      <listitem>
+	<para>Things to check before releasing a plug-in (with, for
+	this example, subcommand <command>sc</command>):</para>
+	<itemizedlist>
+	  <listitem>
+	    <para>Make sure <command>sbtools help sc</command> prints
+	    the anticipated information.</para>
+	  </listitem>
+
+	  <listitem>
+	    <para>Make sure <command>sbtools about sc</command> prints
+	    the anticipated information.</para>
+	  </listitem>
+
+	  <listitem>
+	    <para>Make sure <command>python setup.py test</command>
+	    runs and passes any tests written for the plug-in.</para>
+	  </listitem>
+
+	  <listitem>
+	    <para>Verify the information in the
+	    <filename>setup.py</filename> file.</para>
+	  </listitem>
+	</itemizedlist>
+      </listitem>
+    </itemizedlist>
+
+      <sidebar>
+	<title>Minimizing Impact on <package>SBTools</package>
+	Start-up Time</title>
+	<para><package>SBTools</package> imports all of the plug-in
+	modules each time it runs, but it only instantiates a
+	plug-in's class when that plug-in is being run.</para>
+
+	<para>Although avoiding the instantiation of each class saves
+	time, plug-in modules that import many other modules may take
+	a significant amount of time to import. If your plug-in needs
+	to import many other modules it may be better to make the
+	plug-in a minimal interface and place the actual work in
+	another class in a different module. Then importing the worker
+	module can be put off until the plug-in is
+	instantiated. For an example of this, consider the
+	<package>Stoichiometry</package> plug-in.</para>
+
+	<para>The <package>Stoichiometry</package> plug-in depends on
+	<link
+	xlink:href="http://sbml.org/Software/libSBML"><package>libSBML</package></link>,
+	<link
+	xlink:href="http://numpy.scipy.org/"><package>NumPy</package></link>,
+	and <link
+	xlink:href="http://www.scipy.org/"><package>SciPy</package></link>. It
+	may take a second or more to import these packages, and while
+	it does not seem like much time, it is noticeable when waiting
+	for <command>sbtools help</command> to run. This wait time,
+	however, can be avoided by only importing these packages when
+	the <package>Stoichiometry</package> plug-in is actually
+	run. To see how, examine the directory structure of the
+	<package>Stoichiometry</package> plug-in.</para>
+	<screen>Stoichiometry/
+|-- ez_setup.py
+|-- setup.py
+|-- stoichiometry
+|   |-- __init__.py
+|   |-- sbtplugin.py
+|   `-- stoichiometry.py
+`-- tests
+    |-- __init__.py
+    `-- tests.py</screen>
+
+    <para>The file <filename>sbtplugin.py</filename> contains the
+    plug-in class, <classname>StoichiometryPlg</classname>. This class
+    implements all of the necessary parts for a plug-in, but the
+    actual work of extracting and saving the stoichiometric matrix is
+    done by the <classname>Stoichiometry</classname> class in the
+    <filename>stoichiometry.py</filename> file.</para>
+
+    <para>Since <package>libSBML</package>, <package>NumPy</package>,
+    and <package>SciPy</package> are only needed for working with the
+    stoichiometric matrix, these packages do not need to be imported
+    until the <classname>Stoichiometry</classname> class is to be
+    instantiated.</para>
+
+    <para>The <classname>StoichiometryPlg</classname> class creates a
+    <classname>Stoichiometry</classname> object and calls it when
+    needed. Furthermore, the module in
+    <filename>stoichiometry.py</filename> is not imported until just
+    before instantiating the <classname>Stoichiometry</classname>
+    object. This is seen in the <methodname>__init__</methodname>
+    method in <classname>StoichiometryPlg</classname>.</para>
+    <programlisting>    def __init__(self, sbtools):
+        self.sbtools = sbtools
+        self.parser = self.init_parser()
+
+        from stoichiometry import Stoichiometry
+        self.stoichi = Stoichiometry()</programlisting>
+
+	<para>where in the third line of the method, we import from
+	the <filename>stoichiometry</filename> module. Delaying the
+	import in this manner keeps <package>SBTools</package> from
+	importing the packages needed by the
+	<package>Stoichiometry</package> plug-in until the plug-in is
+	run.</para>
+
+      </sidebar>
+  </sect1>
+</chapter>

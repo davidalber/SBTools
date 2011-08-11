@@ -1,0 +1,12 @@
+Metadata-Version: 1.0
+Name: SBTools
+Version: 0.5
+Summary: A manager for systems biology plug-ins.
+Home-page: UNKNOWN
+Author: David Alber
+Author-email: david_alber@nrel.gov
+License: GPL
+Description: SBTools provides a convenient, unified interface for systems biology
+        tools written in Python.
+        
+Platform: UNKNOWN

@@ -1,0 +1,8 @@
+[SBTools.plugins]
+Help help h ? = sbtools.builtins:Help
+File file = sbtools.builtins:File
+About about = sbtools.builtins:About
+
+[console_scripts]
+sbtools = sbtools.sbtools:main
+

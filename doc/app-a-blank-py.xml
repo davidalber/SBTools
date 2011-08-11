@@ -1,0 +1,68 @@
+<appendix xml:id="app.blank-py"
+	 xmlns="http://docbook.org/ns/docbook" version="5.0">
+  <title>Complete <filename>blank.py</filename> Listing</title>
+  <programlisting linenumbering="numbered">from sbtools.sbtools import UnknownSubcommandError
+from sbtools.sbtool import SBTool
+from sbtools.sboptparse import SBToolOptionParser
+import textwrap
+
+class Blank(SBTool):
+    """
+    A template showing how to build a plug-in for the SBTools package.
+
+    The SBTool methods get_command(), get_about(), print_help(), and
+    run() must be implemented by all plug-ins.
+
+    The SBTool method get_alt_commands() may optionally be
+    overloaded. If not overloaded, then the tool has no alternate
+    subcommands.
+    """
+    def __init__(self, sbtools):
+        self.sbtools = sbtools
+        self.parser = self.init_parser()
+
+    def init_parser(self):
+        """Populate and return the parser object."""
+        usage = "%s [options] [subcommand]" % (self.get_command())
+        description = "An SBTools plug-in template plug-in."
+
+        parser = SBToolOptionParser(self, self.sbtools, usage,
+                                    description=description)
+
+        parser.add_option("-e", "--error", action="store_true", dest="error",
+                          default=False, help="print an error message")
+        return parser
+
+    def get_about(self):
+        """Return this tool's 'about' information."""
+        return """The Blank tool is designed to provide a template for \
+plug-in development by demonstrating a tool with minimal functionality.
+
+The Blank tool is maintained at the National Renewable Energy Laboratory.
+
+The About tool takes care of wrapping this text for you."""
+
+    def print_help(self):
+        """Print this tool's help information."""
+        self.parser.print_help()
+
+    def run(self):
+        """Run the tool."""
+        (self.options, self.args) = self.parser.parse_args()
+
+        if self.options.error:
+            self.parser.error_exit("This is the preferred way to print a \
+usage error and exit. The error_exit() method takes care of wrapping the \
+message for you.")
+        elif len(self.args) > 1:
+            if self.sbtools.has_tool_by_subcommand(self.args[1]):
+                print "The subcommand '%s' exists." % (self.args[1])
+            else:
+                print textwrap.fill("Handle unknown subcommand errors by \
+raising an UnknownSubcommandError exception, as is done below. Also, \
+this statement shows you how to explicitly wrap text in sbtools.", 78)
+                print
+                raise UnknownSubcommandError(self.args[1])
+        else:
+            print "Hello, world."</programlisting>
+</appendix>

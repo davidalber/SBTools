@@ -1,0 +1,192 @@
+<chapter xml:id="ch.design" xmlns="http://docbook.org/ns/docbook"
+	 xmlns:xlink="http://www.w3.org/1999/xlink" version="5.0">
+  <title>Framework Design</title>
+
+  <para>The <package>SBTools</package> framework is a plug-in
+  manager. When run, <package>SBTools</package> is responsible for
+  loading any compatible plug-ins that it detects, discarding
+  conflicting plug-ins, parsing the command line and acting
+  appropriately, and providing methods to query the framework for
+  information about the loaded plug-ins. All other built-in
+  functionality is provided by core plug-ins, which are discussed in
+  <xref linkend="ch.usage"/>. For information on plug-in development,
+  see <xref linkend="ch.developing-plugins"/>.</para>
+
+  <sect1 xml:id="ch.design-sec.plg-detection">
+    <title>Plug-in Detection and Loading</title>
+
+    <para><package>SBTools</package> detects plug-ins by searching all
+    Python packages it can find for a specific <emphasis>entry
+    point</emphasis> that is defined in the plug-in packaging
+    file. The entry point sought by <package>SBTools</package> is
+    "<code>SBTools.plugins</code>", and when a package with this entry
+    point is detected, <package>SBTools</package> attempts to load the
+    plug-in defined. See <xref linkend="ch.developing-plugins"/> for
+    more information about entry points.</para>
+
+    <para>Some packages with the <code>SBTools.plugins</code> entry
+    point may conflict with each other, which leads to some packages
+    not being loaded. This situation is discussed in the next
+    section.</para>
+
+    <para>If there is a need to see exactly what is happening during
+    the detection and loading phase, do <command>sbtools
+    --verbose-load</command>. This command prints information for
+    every Python package detected, any <package>SBTools</package>
+    plug-ins detected in a package, if plug-ins are loaded
+    successfully, and in cases where plug-in loading is unsuccessful,
+    an error message describing what went wrong.</para>
+
+    <sect2 xml:id="ch.design-sec.conflicts">
+      <title>Plug-in Conflict Detection and Resolution</title>
+
+      <para>Two plug-ins are considered to be in conflict if one or
+      more of the following conditions occurs:</para>
+      <itemizedlist>
+	<listitem>
+	  <para>The intersection between the sets of subcommands is
+	  not empty.</para>
+	</listitem>
+	<listitem>
+	  <para>The tool names are the same.</para>
+	</listitem>
+      </itemizedlist>
+
+      <para>Conflicts are resolved by not loading any plug-ins that
+      are in conflict with plug-ins that have already been
+      loaded. This approach places burden on plug-in developers to
+      avoid creating conflicting plug-ins and on the users to manage
+      plug-ins that are in conflict.</para>
+
+      <para>A more sophisticated conflict resolution system will
+      likely be introduced in a future version of
+      <package>SBTools</package>.</para>
+    </sect2>
+  </sect1>
+
+  <sect1 xml:id="ch.design-sec.cl">
+    <title>Parsing the Command Line</title>
+
+    <para>Each plug-in is responsible for parsing the command line,
+    but <package>SBTools</package> looks at the command line before
+    any plug-in is run.</para>
+
+    <para><package>SBTools</package> uses the
+    <classname>SBToolsOptionParser</classname> class for parsing the
+    command line. <classname>SBToolsOptionParser</classname> is
+    derived from the <link
+    xlink:href="http://docs.python.org/library/optparse.html"><classname>OptionParser</classname>
+    class</link>.</para>
+
+    <para>The action taken by <package>SBTools</package> is governed
+    by what is found on the command line.</para>
+    <orderedlist numeration="arabic">
+      <listitem>
+	<para>The command line contains options before any
+	arguments. The only valid options in this situation are
+	<command>-h</command>, <command>--help</command>, and
+	<command>--version</command>. If any of these are detected,
+	the request is handled and <package>SBTools</package>
+	exits. If any other options are detected, an error is printed
+	and <package>SBTools</package> exits.</para>
+      </listitem>
+
+      <listitem>
+	<para>The command line contains arguments before any
+	options. If the first argument is not a valid subcommand, an
+	error is printed and <package>SBTools</package> exits. If the
+	argument is a valid subcommand, then
+	<package>SBTools</package> creates an object for the
+	appropriate plug-in and calls its
+	<methodname>run()</methodname> method.</para>
+      </listitem>
+    </orderedlist>
+  </sect1>
+
+  <sect1 xml:id="ch.design-sec.querying">
+    <title>Querying <package>SBTools</package></title>
+    <para><package>SBTools</package> offers several methods that
+    plug-ins may use to query the framework for information about
+    other plug-ins that are installed. <xref linkend="fig.framework"/>
+    lists the <package>SBTools</package> querying methods.</para>
+
+    <figure xml:id="fig.framework">
+      <title><package>SBTools</package> Query Methods</title>
+      <mediaobject>
+	<imageobject>
+	  <imagedata align="center" scale="99" fileref="images/framework-class.png"/>
+	</imageobject>
+      </mediaobject>
+    </figure>
+
+    <variablelist termlength="34">
+      <varlistentry>
+	<term><methodname>has_tool_by_name(...)</methodname></term>
+	<listitem>
+	  <para>Returns <code>True</code> if a tool with name
+	  <parameter>tname</parameter> is installed.</para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term><methodname>has_tool_by_subcommand(...)</methodname></term>
+	<listitem>
+	  <para>Returns <code>True</code> if a tool with subcommand
+	  <parameter>sc</parameter> is installed.</para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term><methodname>get_tool_by_name(...)</methodname></term>
+	<listitem>
+	  <para>Returns the class of the tool with name
+	  <parameter>tname</parameter> or <code>None</code> if no such
+	  tool exists.</para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term><methodname>get_tool_by_subcommand(...)</methodname></term>
+	<listitem>
+	  <para>Returns the class of the tool with subcommand
+	  <parameter>sc</parameter> or <code>None</code> if no such
+	  tool exists.</para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term><methodname>is_tool_builtin_by_name(...)</methodname></term>
+	<listitem>
+	  <para>Returns <code>True</code> if the tool with name
+	  <parameter>tname</parameter> is a core plug-in,
+	  <code>False</code> if it is not, and <code>None</code> if no
+	  such tool exists.</para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term><methodname>is_tool_builtin_by_subcommand(...)</methodname></term>
+	<listitem>
+	  <para>Returns <code>True</code> if the tool with subcommand
+	  <parameter>sc</parameter> is a core plug-in,
+	  <code>False</code> if it is not, and <code>None</code> if no
+	  such tool exists.</para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term><methodname>get_toolname_list(...)</methodname></term>
+	<listitem>
+	  <para>Returns a list containing the tool names.</para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term><methodname>get_tool_subcommand_list(...)</methodname></term>
+	<listitem>
+	  <para>Returns a list containing the tool subcommands.</para>
+	</listitem>
+      </varlistentry>
+    </variablelist>
+  </sect1>
+</chapter>

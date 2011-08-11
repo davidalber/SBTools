@@ -1,0 +1,234 @@
+<chapter xml:id="ch.usage" xmlns="http://docbook.org/ns/docbook"
+	 xmlns:xlink="http://www.w3.org/1999/xlink" version="5.0">
+  <title>Core Functionality and Usage</title>
+
+  <para>This chapter discusses how to use <package>SBTools</package>
+  once it has been installed, as well as how to manage
+  plug-ins.</para>
+
+  <sect1 xml:id="ch.usage-sec.basic">
+    <title>Basics</title>
+
+    <para><package>SBTools</package> is used inside a console window
+    through the <command>sbtools</command> command. With a few
+    exceptions, the syntax is <command>sbtools &lt;subcommand&gt;
+    [options] [arguments]</command>, where the subcommands correspond
+    to plug-ins. The list of available subcommands may be viewed by
+    doing <command>sbtools help</command>, and additional subcommands
+    become available when new plug-ins are installed.</para>
+
+    <para>The exceptions to the basic syntax are the commands
+    <command>sbtools</command>, <command>sbtools -h</command>,
+    <command>sbtools --help</command>, <command>sbtools
+    --verbose-load</command>, and <command>sbtools
+    --version</command>. The first three commands have the same effect
+    as <command>sbtools help</command> (see below), the fourth prints
+    information on plug-in detection and loading, and the final
+    command prints the <package>SBTools</package> framework
+    version.</para>
+
+    <sect2 xml:id="ch.usage-sec.quick-reference">
+      <title>Quick Reference</title>
+
+      <para>The list below contains basic tasks that are done with
+      <package>SBTools</package> and the command that accomplishes
+      each task. More details on the core plug-ins, which provide some
+      of this functionality, is provided in the next section.</para>
+
+    <variablelist>
+      <varlistentry>
+	<term>Get help on <package>SBTools</package>:</term>
+	<listitem>
+	  <para><command>sbtools help</command></para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term>List of available subcommands:</term>
+	<listitem>
+	  <para><command>sbtools help</command></para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term>Get help for plug-in with subcommand
+	<command>sc</command>:</term>
+	<listitem>
+	  <para><command>sbtools help sc</command></para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term>Get 'about' information for
+	<package>SBTools</package>:</term>
+	<listitem>
+	  <para><command>sbtools about</command></para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term>Get 'about' information for plug-in with subcommand
+	<command>sc</command>:</term>
+	<listitem>
+	  <para><command>sbtools about sc</command></para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term>Locate installed file for plug-in with subcommand
+	<command>sc</command>:</term>
+	<listitem>
+	  <para><command>sbtools file sc</command></para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term>Print plug-in detection and loading information and
+	errors:</term>
+	<listitem>
+	  <para><command>sbtools --verbose-load</command></para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term>Get <package>SBTools</package> version:</term>
+	<listitem>
+	  <para><command>sbtools --version</command></para>
+	</listitem>
+      </varlistentry>
+    </variablelist>
+    </sect2>
+  </sect1>
+
+  <sect1 xml:id="ch.usage-sec.core-plugins">
+    <title>Core Plug-ins</title>
+
+    <para><package>SBTools</package> comes with three core plug-ins:
+    <package>Help</package>, <package>About</package>, and
+    <package>File</package>.</para>
+
+    <sidebar>
+      <title>Plug-in Types</title>
+      <para>Plug-ins are categorized into two groups: core plug-ins
+      and installed plug-ins. From an implementation point of view,
+      there is no difference between the classes of plug-ins. The only
+      difference is whether a plug-in is included in the
+      <package>SBTools</package> distribution.</para>
+
+      <para>The number of core plug-ins is deliberately small and is
+      limited to tools that are necessary to use
+      <package>SBTools</package> effectively.</para>
+    </sidebar>
+
+    <sect2 xml:id="ch.usage-sec.help-plg">
+      <title><package>Help</package></title>
+
+      <para>The <package>Help</package> plug-in is responsible for
+      providing a single interface for getting help on the framework
+      and the plug-ins. To view the help information for the framework
+      do <command>sbtools help</command>. For an
+      <package>SBTools</package> installation without any extra
+      plug-ins installed, this command prints:</para>
+      <screen>Usage: sbtools &lt;subcommand&gt; [options] [args]
+
+Type 'sbtools help &lt;subcommand&gt;' for help on a specific subcommand.
+Type 'sbtools --version' to see the program version.
+Type 'sbtools --verbose-load' to see the packages and plug-ins detected, and
+if plug-ins are successfully loaded.
+
+Subcommands consist of built-in subcommands and subcommands provided by
+installed plug-ins.
+
+Available subcommands:
+   about
+   file
+   help (h, ?)</screen>
+
+      <para>In addition to providing usage information on the
+      <package>SBTools</package> framework, the <command>sbtools
+      help</command> command lists the available subcommands. Each
+      line in the available subcommands list corresponds to a single
+      plug-in. All plug-ins provide a subcommand, but some also
+      provide a list of alternate subcommands. These alternate
+      subcommands are listed in parentheses in the subcommands
+      list. The <package>Help</package> plug-in, for example, has two
+      alternate subcommands: '<command>h</command>' and
+      '<command>?</command>'.</para>
+
+      <para>As the help information states, information about a
+      specific plug-in is obtained by doing <command>sbtools help
+      &lt;subcommand&gt;</command>. For example, doing
+      <command>sbtools help help</command> prints information about
+      the <package>Help</package> plug-in:</para>
+      <screen>Usage: help [subcommand]
+
+help (h, ?): Provide usage information on the SBTools core package or a plug-
+in when a subcommand is provided.
+
+Options:
+  --version   show program's version number and exit
+  -h, --help  show this help message and exit</screen>
+
+    <sidebar>
+      <title>The Appearance of <package>SBTools</package></title>
+
+      <para>Users familiar with the <link
+      xlink:href="http://subversion.tigris.org/"><package>Subversion</package></link>
+      Version Control System may notice similarities between the look
+      and feel of <package>SBTools</package> and
+      <package>Subversion</package>. This is the case because the
+      authors of <package>SBTools</package> feel that the interface to
+      <package>Subversion</package> is very intuitive and effective
+      and drew cues from it when designing several elements of the
+      <package>SBTools</package> interface.</para>
+    </sidebar>
+    </sect2>
+
+    <sect2 xml:id="ch.usage-sec.about-plg">
+      <title><package>About</package></title>
+
+      <para>The <package>About</package> plug-in prints "about"
+      information for the <package>SBTools</package> framework or a
+      specified plug-in. If a plug-in does not provide any about
+      information, then a message relaying that fact is
+      printed.</para>
+
+      <para>About information is used to provide information about
+      a plug-in. Developers may use the space to provide developer
+      names, copyright information, license information, a URL for the
+      plug-in's home, and so on.</para>
+
+      <para>As <command>sbtools help about</command> details, the
+      about command may be used to get information about the framework
+      (<command>sbtools about</command>) or about a specific plug-in
+      (<command>sbtools about &lt;subcommand&gt;</command>).</para>
+    </sect2>
+
+    <sect2 xml:id="ch.usage-sec.file-plg">
+      <title><package>File</package></title>
+
+      <para>The <package>File</package> plug-in prints the path and
+      filename of a plug-in installation. This feature is useful for
+      locating the file to delete when removing a plug-in. In the case
+      that the specified plug-in is a core plug-in,
+      <package>File</package> prints a message to that effect.</para>
+    </sect2>
+  </sect1>
+
+  <sect1 xml:id="ch.usage-sec.plg-mngmnt">
+    <title>Plug-in Management</title>
+
+    <para><package>SBTools</package> automatically detects the
+    presence of plug-ins each time that it runs. This means that
+    nothing special needs to be done to configure or alert the
+    framework when a plug-in is added or removed.</para>
+
+    <para>Adding a plug-in to the framework is as simple as following
+    the directions for installing the plug-in.</para>
+
+    <para>Plug-in removal is done manually by locating the plug-in
+    installation and removing it from the filesystem. The
+    <package>File</package> plug-in is useful for determining the
+    location of a plug-in's installation.</para>
+  </sect1>
+</chapter>

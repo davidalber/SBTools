@@ -1,0 +1,181 @@
+<chapter xml:id="ch.introduction"
+	 xmlns="http://docbook.org/ns/docbook" version="5.0">
+  <title>Introduction</title>
+
+  <para>The <package>SBTools</package> framework is a Python package
+  designed to provide a unified interface for console-based (i.e.,
+  text-based) systems biology tools written in Python. This guide
+  discusses all aspects of framework, including downloading and
+  installation (<xref linkend="ch.installation"/>), usage of the
+  <command>sbtools</command> command (<xref linkend="ch.usage"/>), the
+  framework design (<xref linkend="ch.design"/>), and how to create
+  new plug-ins for use within the framework (<xref
+  linkend="ch.developing-plugins"/>).</para>
+
+  <para><package>SBTools</package> end users need only read up through
+  <xref linkend="ch.usage"/>. Parties interested in producing plug-ins
+  for <package>SBTools</package> will also benefit from the content in
+  the final chapters.</para>
+
+  <sect1 xml:id="ch.introduction-sec.history">
+    <title>History</title>
+    <para>The first incarnation of <package>SBTools</package> (at that
+    time called <package>SBMLTools</package>) was developed to
+    organize a growing set of Python tools written for manipulating
+    Systems Biology Markup Language (SBML) models at the National
+    Renewable Energy Laboratory. The number of available tools reached
+    a point at which it became justifiable to reorganize them as
+    subcommands within a single piece of software. This decision led
+    to the creation of a system, <package>SBMLTools</package>, with a
+    single interface that offered several tools to users. New tools
+    were released through <package>SBMLTools</package>, enabling users
+    to discover them more quickly.</para>
+
+    <para>This organization model was effective in many ways, but the
+    implementation proved to be too rigid with regards to future
+    development. The main interface of <package>SBMLTools</package>
+    was tightly coupled to the tools themselves, which naturally led
+    to a very centralized model of development with little hope of
+    people outside the core development group contributing. The
+    rigidity of <package>SBMLTools</package> coupled with the
+    recognition that other systems biology groups were undoubtedly
+    writing console-based tools in Python led to the design of a more
+    modular system, <package>SBTools</package>.</para>
+
+    <para><package>SBTools</package> offers the features that worked
+    well in <package>SBMLTools</package>, but is different in that it
+    is a plug-in system. Tools are written as plug-ins and, once
+    installed, these plug-ins are detected by
+    <package>SBTools</package> and made available to users. This
+    approach decouples the development of the tools from the
+    framework, allowing for a much less centralized development model
+    in which developers anywhere are now able to produce plug-ins to
+    run in the framework.</para>
+
+    <sidebar><title>Specificity of <package>SBTools</package></title>
+    <para>Although <package>SBTools</package> was designed with
+    systems biology software tools in mind, the framework design is
+    not specific to systems biology. Any application or field that
+    could benefit from a similar plug-in model could use
+    <package>SBTools</package> or a version of it adapted to fit
+    particular needs.</para>
+    </sidebar>
+  </sect1>
+
+
+  <sect1>
+    <title>Change Log</title>
+
+    <variablelist>
+      <varlistentry>
+	<term>Version 0.5 (<date>January 29, 2009</date>)</term>
+	<listitem>
+	  <itemizedlist>
+	    <listitem>
+	      <para>Redefined the <package>SBTools</package> interface
+	      so that plug-in subcommands and alternate subcommands
+	      are no longer defined inside the plug-in class. This
+	      spares <package>SBTools</package> from having to create
+	      an object for each plug-in to extract basic information
+	      about the plug-in.</para>
+
+	      <para>The new scheme has plug-in developers define the
+	      name and subcommands in the entry point in the
+	      <filename>setup.py</filename> file.</para>
+	    </listitem>
+	  </itemizedlist>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term>Version 0.4 (<date>January 14, 2009</date>)</term>
+	<listitem>
+	  <itemizedlist>
+	    <listitem>
+	      <para>Added exception handling to detect missing
+	      dependencies, unsatisfied dependency versions, and bad
+	      entry points for plug-ins. When one of these conditions
+	      occurs, the affected plug-in is skipped. In previous
+	      versions, these situations caused
+	      <package>SBTools</package> to exit due to unhandled
+	      exceptions.</para>
+	    </listitem>
+
+	    <listitem>
+	      <para>Changed <methodname>__init__</methodname> method
+	      of the <classname>SBToolOptionParser</classname>
+	      class. This method must now be called with the
+	      <package>SBTools</package> object, in addition to the
+	      previously required parameters.</para>
+	    </listitem>
+
+	    <listitem>
+	      <para>Added the <command>--verbose-load</command> command-line
+	      option for <command>sbtools</command>. When <command>
+	      sbtools --verbose-load</command> is run,
+	      <package>SBTools</package> prints the packages and
+	      plug-ins detected, and if plug-ins are successfully
+	      loaded. When a plug-in cannot be loaded, a message
+	      describing the cause is printed.</para>
+	    </listitem>
+
+	    <listitem>
+	      <para>First version of this guide.</para>
+	    </listitem>
+	  </itemizedlist>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term>Version 0.3 (<date>December 16, 2008</date>)</term>
+	<listitem>
+	  <itemizedlist>
+	    <listitem>
+	      <para>Did away with the plug-in directory. Plug-ins are
+	      now installed like other modules, which makes
+	      <package>SBTools</package> more platform
+	      independent.</para>
+	    </listitem>
+	  </itemizedlist>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term>Version 0.2 (<date>December 12, 2008</date>)</term>
+	<listitem>
+	  <itemizedlist>
+	    <listitem>
+	      <para>Modified naming conventions of methods to be more
+	      consistent throughout the package.</para>
+	    </listitem>
+	    <listitem>
+	      <para>Added methods for plug-ins to query
+	      <package>SBTools</package>.</para>
+	    </listitem>
+	    <listitem>
+	      <para>Changes to design of framework defined in Version
+	      0.1, including additional convenience methods and code
+	      for plug-in developers.</para>
+	    </listitem>
+	  </itemizedlist>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term>Version 0.1 (<date>December 11, 2008</date>)</term>
+	<listitem>
+	  <itemizedlist>
+	    <listitem>
+	      <para>Initial design of the plug-in framework.</para>
+	    </listitem>
+	    <listitem>
+	      <para>Implementation of core plug-ins
+	      <package>About</package>, <package>File</package>, and
+	      <package>Help</package>.</para>
+	    </listitem>
+	  </itemizedlist>
+	</listitem>
+      </varlistentry>
+    </variablelist>
+  </sect1>
+</chapter>

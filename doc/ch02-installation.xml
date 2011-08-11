@@ -1,0 +1,99 @@
+<chapter xml:id="ch.installation"
+	 xmlns="http://docbook.org/ns/docbook"
+	 xmlns:xlink="http://www.w3.org/1999/xlink" version="5.0">
+  <title>Installation</title>
+
+  <para>This chapter discusses where to find and how to install the
+  <package>SBTools</package> framework package. Although the
+  directions apply specifically to the <package>SBTools</package>
+  framework, installation of plug-ins developed for the framework
+  proceeds similarly.</para>
+
+  <para>The <package>SBTools</package> framework depends only on the
+  presence of a <link
+  xlink:href="http://www.python.org/">Python</link>
+  interpreter. <package>SBTools</package> has been tested with Python
+  2.5 and Python 2.6, but may work with other versions of the 2.*
+  interpreter.</para>
+
+  <sidebar><title>Installation Dependency Resolution</title>
+  <para>It is not absolutely necessary to install
+  <package>SBTools</package> prior to installing any
+  plug-ins. <package>SBTools</package> and <package>SBTools</package>
+  plug-ins are packaged and distributed using <link
+  xlink:title="setuptools"
+  xlink:href="http://peak.telecommunity.com/DevCenter/setuptools">setuptools</link>. When
+  properly set up, the framework and plug-ins declare their software
+  dependencies, which are then handled at installation
+  time. Therefore, plug-ins should declare <package>SBTools</package>
+  as a dependency, causing the framework to be automatically
+  installed, if it is not already present, the first time a plug-in is
+  installed.</para>
+  </sidebar>
+
+  <para>Two install methods are available, depending on software on
+  your system. The first method is available if your system has
+  <command>easy_install</command> installed. If you are not sure,
+  follow the directions in <xref
+  linkend="ch.installation-sec.without-easy_install"/>.</para>
+
+  <sect1 xml:id="ch.installation-sec.with-easy_install">
+    <title>Installation with <command>easy_install</command></title>
+
+    <para>This section describes the installation procedure on a
+    system with <command>easy_install</command> available.</para>
+
+    <para>This method uses <command>easy_install</command> to fetch
+    the package over the internet and install it. Do the following
+    in a terminal:</para>
+
+    <screen>$ easy_install sbtools</screen>
+  </sect1>
+
+  <sect1 xml:id="ch.installation-sec.without-easy_install">
+    <title>Installation without
+    <command>easy_install</command></title>
+
+    <para>This section describes the installation procedure on a
+    system that do not have <command>easy_install</command>
+    installed.</para>
+
+    <para>In this approach, you need to manually download the <package>SBTools</package>
+    &version; distribution (the file named
+    <filename>sbtools-&version;.tar.gz</filename>) from <link
+    xlink:href="http://www.nrel.gov/"/>. Next, extract the files from
+    the archive:</para>
+
+    <screen>$ tar zxf sbtools-&version;.tar.gz</screen>
+
+    <para>This creates the directory <filename
+    class="directory">sbtools-&version;</filename>. To complete the
+    installation, do:</para>
+
+    <screen>$ cd sbtools-&version;
+$ python setup.py install</screen>
+
+    <note>
+      <para>Following the completion of these steps, your system will
+      have <command>easy_install</command>.</para>
+    </note>
+
+  </sect1>
+
+  <sect1>
+    <title>Did it work?</title>
+
+    <para>With either installation approach it should be clear if the
+    installation failed due to some error. If the installation appears
+    to have worked, then the <command>sbtools</command> command should
+    now be available to you on the command line. Try typing</para>
+
+    <screen>$ sbtools help</screen>
+
+    <para>to verify that <command>sbtools</command> is now present.</para>
+
+    <para>If the installation was successful then see the next chapter
+    (<xref linkend="ch.usage"/>) for documentation on using the
+    <command>sbtools</command>.</para>
+  </sect1>
+</chapter>
