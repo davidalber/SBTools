@@ -3,7 +3,7 @@ use_setuptools()
 from setuptools import setup, find_packages
 
 setup(name="SBTools",
-      version="0.5",
+      version="0.5-r1",
       description="A manager for systems biology plug-ins.",
       long_description="""\
 SBTools provides a convenient, unified interface for systems biology
